@@ -1,0 +1,17 @@
+#cloud-config
+packages:
+  - amazon-cloudwatch-agent
+package_update: true
+write_files:
+  - path: /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.d/user.json
+    content: ${cloudwatch_agent_config_encoded}
+    encoding: base64
+    permissions: "0644"
+  - path: /etc/ecs/ecs.config
+    content: |
+      ECS_ENGINE_TASK_CLEANUP_WAIT_DURATION=5m
+      ECS_NUM_IMAGES_DELETE_PER_CYCLE=50
+      ECS_ENABLE_SPOT_INSTANCE_DRAINING=true
+      ECS_ENGINE_AUTH_TYPE=dockercfg
+    permissions: "0644"
+    defer: true
