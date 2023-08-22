@@ -3,11 +3,12 @@ locals {
   enabled             = module.this.enabled
   self_hosted_enabled = local.enabled && var.self_hosted
 
-  cluster_node_types = toset(local.self_hosted_enabled ? ["spot", "ondemand"] : [])
-
   aws_account_id   = var.aws_account_id != "" ? var.aws_account_id : try(data.aws_caller_identity.current[0].account_id, "")
   aws_region_name  = var.aws_region_name != "" ? var.aws_region_name : try(data.aws_region.current[0].name, "")
   aws_kv_namespace = trim(coalesce(var.aws_kv_namespace, "ecs-cluster/${module.cluster_label.id}"), "/")
+
+  cluster_node_types        = local.self_hosted_enabled ? ["spot", "ondemand"] : []
+  tag_name_ecs_cluster_name = "${local.aws_kv_namespace}/cluster-name"
 }
 
 data "aws_caller_identity" "current" {
@@ -50,7 +51,7 @@ resource "aws_ecs_cluster" "this" {
 module "cluster_node_label" {
   source   = "cloudposse/label/null"
   version  = "0.25.0"
-  for_each = local.cluster_node_types
+  for_each = toset(local.cluster_node_types)
 
   attributes = [each.key]
   tags       = { ("${local.aws_kv_namespace}/node-type") : each.key }
@@ -58,7 +59,7 @@ module "cluster_node_label" {
 }
 
 resource "aws_autoscaling_group" "this" {
-  for_each = local.cluster_node_types
+  for_each = toset(local.cluster_node_types)
 
   name                  = module.cluster_node_label[each.key].id
   vpc_zone_identifier   = var.vpc_subnet_ids
@@ -105,7 +106,10 @@ resource "aws_autoscaling_group" "this" {
   }
 
   dynamic "tag" {
-    for_each = merge(module.cluster_node_label[each.key].tags, { Name = module.cluster_node_label[each.key].id })
+    for_each = merge(
+      module.cluster_node_label[each.key].tags,
+      { Name = module.cluster_node_label[each.key].id },
+    )
 
     content {
       key                 = tag.key
@@ -324,7 +328,7 @@ data "aws_iam_policy_document" "cluster_instance_access" {
 module "capacity_provider_label" {
   source   = "cloudposse/label/null"
   version  = "0.25.0"
-  for_each = local.cluster_node_types
+  for_each = toset(local.cluster_node_types)
 
   delimiter      = "_"
   label_order    = ["name", "attributes"]
@@ -347,7 +351,7 @@ resource "aws_ecs_cluster_capacity_providers" "this" {
 }
 
 resource "aws_ecs_capacity_provider" "this" {
-  for_each = local.cluster_node_types
+  for_each = toset(local.cluster_node_types)
 
   name = replace(upper(module.capacity_provider_label[each.key].id), "-", "_")
 
@@ -362,6 +366,18 @@ resource "aws_ecs_capacity_provider" "this" {
       target_capacity           = 100
     }
   }
+}
+
+# ======================================================== lifecycle-manager ===
+
+module "lifecycle_manager" {
+  source = "./modules/lifecycle-manager"
+
+  enabled                   = local.self_hosted_enabled
+  asg_names                 = [for x in local.cluster_node_types : aws_autoscaling_group.this[x].name]
+  tag_name_ecs_cluster_name = local.tag_name_ecs_cluster_name
+
+  context = module.cluster_label.context
 }
 
 # ================================================================== lookups ===

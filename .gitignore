@@ -59,6 +59,3 @@ tmp/
 
 # opa
 bundle.tar.gz
-
-# lifecycle
-**/lifecycle*
