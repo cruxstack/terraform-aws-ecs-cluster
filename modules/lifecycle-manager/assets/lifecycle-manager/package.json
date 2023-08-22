@@ -1,0 +1,38 @@
+{
+  "name": "ecs-asg-lifecycle-manager",
+  "version": "0.0.1",
+  "description": "Lifecycle Manager for the ASGs of an ECS Cluster",
+  "main": "index.js",
+  "contributors": [
+    {
+      "name": "Brian Ojeda",
+      "email": "9335829+sgtoj@users.noreply.github.com"
+    }
+  ],
+  "scripts": {
+    "build": "npx tsc --noEmit && npx esbuild ./src/index.ts --bundle --platform=node --target=node18 --external:aws-lambda --log-level=warning --sourcemap --outfile=dist/index.js",
+    "test": "jest --detectOpenHandles --forceExit",
+    "test:coverage": "jest --coverage",
+    "tsc": "npx tsc",
+    "lint": "npx eslint src/**/*.ts"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1441.0"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.6.3",
+    "@tsconfig/node18": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "esbuild": "^0.19.2",
+    "eslint": "^8.47.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.1.0",
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-jest": "^27.2.3",
+    "jest": "^29.6.3",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.1.6"
+  }
+}

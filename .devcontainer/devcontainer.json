@@ -32,6 +32,7 @@
       },
       "extensions": [
         "darkriszty.markdown-table-prettify",
+        "dbaeumer.vscode-eslint",
         "editorconfig.editorconfig",
         "github.copilot",
         "github.copilot-chat",

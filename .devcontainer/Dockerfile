@@ -25,6 +25,14 @@ RUN curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/in
 # install docker
 COPY --from=docker:dind /usr/local/bin/docker /usr/local/bin/
 
+# install node.js
+ENV NODE_VERSION=18.x
+RUN curl -sL https://deb.nodesource.com/setup_${NODE_VERSION} | bash - && \
+    apt-get install -y nodejs
+
+# install typescript
+RUN npm install -g typescript
+
 # install pip
 RUN apt-get update
 RUN apt-get install -y \
